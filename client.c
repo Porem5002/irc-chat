@@ -3,12 +3,60 @@
 
 #include "shared.h"
 
+typedef struct ClientConfig ClientConfig;
+struct ClientConfig
+{
+    const char* ip;
+    u_short port;
+};
+
+ClientConfig client_load_config(int argc, char** argv)
+{
+    ClientConfig config = {
+        .ip = "127.0.0.1",
+        .port = 6000,
+    };
+
+    for(size_t i = 1; i < argc; i+=2)
+    {
+        if(strcmp(argv[i], "-ip") == 0)
+        {
+            if(i + 1 >= argc)
+            {
+                fprintf(stderr, "ERROR: Invalid number of arguments for flag '-ip'\n");
+                exit(EXIT_FAILURE);
+            }
+
+            config.ip = argv[i+1];
+        }
+        else if(strcmp(argv[i], "-port") == 0)
+        {
+            if(i + 1 >= argc)
+            {
+                fprintf(stderr, "ERROR: Invalid number of arguments for flag '-port'\n");
+                exit(EXIT_FAILURE);
+            }
+
+            config.port = (u_short)atoi(argv[i+1]);
+        }
+        else
+        {
+            fprintf(stderr, "ERROR: \'%s\' is not a valid flag\n", argv[i]);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    return config;
+}
+
 int network_main(int argc, char** argv, SOCKET skt)
 {
+    ClientConfig config = client_load_config(argc, argv);
+
     SOCKADDR_IN address = {0};
     address.sin_family = AF_INET;
-    address.sin_addr.s_addr = inet_addr("127.0.0.1");
-    address.sin_port = htons(6000);
+    address.sin_addr.s_addr = inet_addr(config.ip);
+    address.sin_port = htons(config.port);
 
     char buffer [MAX_MSG_SIZE];
     MsgPacket* msg = (MsgPacket*)buffer;

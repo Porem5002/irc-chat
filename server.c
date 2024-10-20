@@ -3,12 +3,48 @@
 
 #include "shared.h"
 
+typedef struct ServerConfig ServerConfig;
+struct ServerConfig
+{
+    u_short port;
+};
+
+ServerConfig server_load_config(int argc, char** argv)
+{
+    ServerConfig config = {
+        .port = 6000,
+    };
+
+    for(size_t i = 1; i < argc; i+=2)
+    {
+        if(strcmp(argv[i], "-port") == 0)
+        {
+            if(i + 1 >= argc)
+            {
+                fprintf(stderr, "ERROR: Invalid number of arguments for flag '-port'\n");
+                exit(EXIT_FAILURE);
+            }
+
+            config.port = (u_short)atoi(argv[i+1]);
+        }
+        else
+        {
+            fprintf(stderr, "ERROR: \'%s\' is not a valid flag\n", argv[i]);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    return config;
+}
+
 int network_main(int argc, char** argv, SOCKET skt)
 {
+    ServerConfig config = server_load_config(argc, argv);
+
     SOCKADDR_IN address = {0};
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
-    address.sin_port = htons(6000);
+    address.sin_port = htons(config.port);
 
     if(bind(skt, (SOCKADDR*)&address, sizeof(address)))
     {
