@@ -1,12 +1,13 @@
-#include <winsock2.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "shared.h"
+#include "network/network.h"
 
 typedef struct ServerConfig ServerConfig;
 struct ServerConfig
 {
-    u_short port;
+    NetworkPort port;
 };
 
 ServerConfig server_load_config(int argc, char** argv)
@@ -25,7 +26,7 @@ ServerConfig server_load_config(int argc, char** argv)
                 exit(EXIT_FAILURE);
             }
 
-            config.port = (u_short)atoi(argv[i+1]);
+            config.port = (NetworkPort)atoi(argv[i+1]);
         }
         else
         {
@@ -37,57 +38,63 @@ ServerConfig server_load_config(int argc, char** argv)
     return config;
 }
 
-int network_main(int argc, char** argv, SOCKET skt)
+int main(int argc, char** argv)
 {
+    network_start();
+
     ServerConfig config = server_load_config(argc, argv);
 
-    SOCKADDR_IN address = {0};
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = htonl(INADDR_ANY);
-    address.sin_port = htons(config.port);
+    NetworkAddress address = {
+        .ip = {0},
+        .port = config.port,
+    };
 
-    if(bind(skt, (SOCKADDR*)&address, sizeof(address)))
+    if(!network_bind(address))
     {
         fprintf(stderr, "ERROR: Could not bind server to address\n");
         return 1;
     }
 
-    char buffer [MAX_MSG_SIZE];
-    MsgPacket* msg = (MsgPacket*)buffer;
+    NetworkMessage msg = {0};
 
     size_t client_count = 0;
-    SOCKADDR_IN* clients = NULL;
+    NetworkAddress* clients = NULL;
+
+    char pbuffer [100];
 
     while(1)
     {
-        SOCKADDR_IN source;
-        int source_len = sizeof(source);
-        int msg_size = recvfrom(skt, (char*)buffer, sizeof(buffer), 0, (SOCKADDR*)&source, &source_len);
+        NetworkAddress source;
 
-        if(msg_size != SOCKET_ERROR && msg_size >= sizeof(u_short))
+        if(network_receive(&source, &msg))
         {
-            switch(msg_get_kind(msg))
+            switch(msg.kind)
             {
-                case MSG_KIND_CONNECT:
+                case NETWORK_MSG_KIND_CONNECT:
                     // Prevent multiple connections from the same client
+                    network_address_to_str(source, pbuffer, sizeof(pbuffer));
+                    printf("%s connected\n", pbuffer);
+
                     clients = realloc(clients, sizeof(*clients) * (client_count + 1));
                     clients[client_count++] = source;
                     break;
-                case MSG_KIND_DISCONNECT:
+                case NETWORK_MSG_KIND_DISCONNECT:
                     // Remove clients
+                    network_address_to_str(source, pbuffer, sizeof(pbuffer));
+                    printf("%s disconnected\n", pbuffer);
                     break;
-                case MSG_KIND_DATA:
+                case NETWORK_MSG_KIND_TEXT:
                     for(int i = 0; i < client_count; i++)
                     {
-                        SOCKADDR_IN c = clients[i];
-
-                        if(c.sin_addr.s_addr != source.sin_addr.s_addr || c.sin_port != source.sin_port)
-                            sendto(skt, (char*)msg, msg_get_size(msg), 0, (SOCKADDR*)&c, sizeof(c));
+                        NetworkAddress c = clients[i];
+                        if(!network_address_equals(c, source))
+                            network_send(c, &msg);
                     }
                     break;
             }
         }
     }
 
+    network_finish();
     return 0;
 }

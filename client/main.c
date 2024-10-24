@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "..\network\network.h"
 #include "ui.h"
 
 #define BACKGROUND_COLOR ((Color){50, 50, 50, 255})
@@ -14,6 +15,7 @@
 
 int main()
 {
+    network_start();
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Client");
 
     TextStyle style = {
@@ -22,8 +24,8 @@ int main()
         .spacing = 2.0f
     };
 
+    Vector2 input_pos = { 0, SCREEN_HEIGHT - 20 };
     char input_buffer [INPUT_CAP] = {0};
-
     TextInput input = {
         .char_cap = INPUT_CAP,
         .char_count = 0,
@@ -32,25 +34,44 @@ int main()
 
     ChatView chat = { 0, NULL };
 
-    Vector2 input_pos = { 0, SCREEN_HEIGHT - 20 };
+    NetworkAddress target_address = {
+        .ip = { 127, 0, 0, 1 },
+        .port = 6000,
+    };
+
+    NetworkAddress source_address;
+    NetworkMessage msg = {0};
+
+    msg.kind = NETWORK_MSG_KIND_CONNECT;
+    network_send(target_address, &msg);
 
     while(!WindowShouldClose())
     {
+        char c;
+        while((c = GetCharPressed()) != 0)
+            text_input_push_char(&input, c);
+
+        if((IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)))
+            text_input_pop_char(&input);
+
+        while(network_receive(&source_address, &msg))
+        {
+            if(msg.kind == NETWORK_MSG_KIND_TEXT)
+                chat_view_push(&chat, msg.content);
+        }
+
+        if(IsKeyPressed(KEY_ENTER) && !text_input_is_empty(&input))
+        {
+            msg.kind = NETWORK_MSG_KIND_TEXT;
+            strcpy(msg.content, input.text);
+            network_send(target_address, &msg);
+
+            chat_view_push(&chat, input.text);
+            text_input_clear(&input);
+        }
+        
         BeginDrawing();
             ClearBackground(BACKGROUND_COLOR);
-
-            char c;
-            while((c = GetCharPressed()) != 0)
-                text_input_push_char(&input, c);
-
-            if((IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)))
-                text_input_pop_char(&input);
-
-            if(IsKeyPressed(KEY_ENTER) && !text_input_is_empty(&input))
-            {
-                chat_view_push(&chat, input.text);
-                text_input_clear(&input);
-            }
 
             Vector2 input_size = measure_styled_text(style, input.text);
             
@@ -64,6 +85,10 @@ int main()
         EndDrawing();
     }
 
+    msg.kind = NETWORK_MSG_KIND_DISCONNECT;
+    network_send(target_address, &msg);
+
     CloseWindow();
+    network_finish();
     return 0;
 }
