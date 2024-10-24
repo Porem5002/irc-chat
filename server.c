@@ -40,12 +40,12 @@ ServerConfig server_load_config(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-    network_start();
-
     ServerConfig config = server_load_config(argc, argv);
 
+    network_start();
+
     NetworkAddress address = {
-        .ip = {0},
+        .ip = NETWORK_IP_ANY,
         .port = config.port,
     };
 

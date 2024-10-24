@@ -6,6 +6,9 @@
 
 #define NETWORK_MESSAGE_MAX_CONTENT 400
 
+#define NETWORK_IP_ANY ((NetworkIP){0})
+#define NETWORK_IP_LOCALHOST ((NetworkIP){ 127, 0, 0, 1 })
+
 enum
 {
     NETWORK_MSG_KIND_CONNECT,
@@ -42,6 +45,7 @@ bool network_bind(NetworkAddress address);
 bool network_receive(NetworkAddress* source, NetworkMessage* msg);
 bool network_send(NetworkAddress target, const NetworkMessage* msg);
 
+bool network_str_to_ip(const char* s, NetworkIP* ip);
 void network_ip_to_str(NetworkIP ip, char* s, size_t n);
 void network_address_to_str(NetworkAddress address, char* s, size_t n);
 

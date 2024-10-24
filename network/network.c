@@ -81,6 +81,19 @@ bool network_send(NetworkAddress target, const NetworkMessage* msg)
     return sendto(net.sock, (char*)msg, sizeof(*msg), 0, (SOCKADDR*)&address, sizeof(address)) != SOCKET_ERROR;
 }
 
+bool network_str_to_ip(const char* s, NetworkIP* ip)
+{
+    unsigned a, b, c, d; 
+    int result = sscanf(s, "%u.%u.%u.%u", &a, &b, &c, &d);
+
+    ip->bytes[0] = a;
+    ip->bytes[1] = b;
+    ip->bytes[2] = c;
+    ip->bytes[3] = d;
+
+    return result == 4;
+}
+
 void network_ip_to_str(NetworkIP ip, char* s, size_t n)
 {
     if(n == 0) return;
