@@ -115,7 +115,7 @@ int main(int argc, char** argv)
         while(network_receive(&source_address, &msg))
         {
             if(msg.kind == NETWORK_MSG_KIND_TEXT)
-                chat_view_push(&chat, msg.content);
+                chat_view_push(&chat, ORANGE, "someone", TEXT_COLOR, msg.content);
         }
 
         if(IsKeyPressed(KEY_ENTER) && !text_input_is_empty(&input))
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
             strcpy(msg.content, input.text);
             network_send(target_address, &msg);
 
-            chat_view_push(&chat, input.text);
+            chat_view_push(&chat, ORANGE, "you", TEXT_COLOR, input.text);
             text_input_clear(&input);
         }
         
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
             // draw chat above text input
             Vector2 chat_pos = input_pos;
             chat_pos.y -= input_size.y;
-            chat_view_draw(&chat, style, chat_pos, TEXT_COLOR);
+            chat_view_draw(&chat, style, chat_pos);
 
             Vector2 aligned_input_pos = { input_pos.x, input_pos.y - input_size.y/2 };
             draw_styled_text(style, input.text, aligned_input_pos, TEXT_COLOR);

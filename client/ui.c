@@ -3,28 +3,47 @@
 
 #include "ui.h"
 
-void chat_view_push(ChatView* chat, char* text)
+void chat_view_push(ChatView* chat, Color username_color, const char* username, Color content_color, const char* content)
 {
     size_t old_count = chat->item_count;
     size_t new_count = ++chat->item_count;
 
     chat->items = realloc(chat->items, sizeof(ChatItem) * new_count);
     memmove(chat->items + 1, chat->items, sizeof(ChatItem) * old_count);
-    chat->items[0] = (ChatItem){ strdup(text) };
+
+    chat->items[0] = (ChatItem) {
+        .username_color = username_color,
+        .username = strdup(username),
+
+        .content_color = content_color,
+        .content = strdup(content)
+    };
 }
 
-void chat_view_draw(const ChatView* chat, TextStyle style, Vector2 start_pos, Color content_color)
+void chat_view_draw(const ChatView* chat, TextStyle style, Vector2 start_pos)
 {
-    Vector2 curr_pos = start_pos;
+    const char* separator = ": ";
+    Vector2 offset = start_pos;
 
     for (size_t i = 0; i < chat->item_count; i++)
     {
         ChatItem item = chat->items[i];
-        Vector2 content_size = measure_styled_text(style, item.text);
+        Vector2 username_size = measure_styled_text(style, item.username);
+        Vector2 separator_size = measure_styled_text(style, separator);
+        Vector2 content_size = measure_styled_text(style, item.content);
 
-        curr_pos.y -= content_size.y / 2;
-        draw_styled_text(style, item.text, curr_pos, content_color);
-        curr_pos.y -= content_size.y / 2;
+        Vector2 pos = offset;
+        pos.y -= content_size.y / 2;
+        
+        draw_styled_text(style, item.username, pos, item.username_color);
+        pos.x += username_size.x + style.spacing;
+
+        draw_styled_text(style, separator, pos, item.username_color);
+        pos.x += separator_size.x + style.spacing;
+
+        draw_styled_text(style, item.content, pos, item.content_color);
+
+        offset.y -= content_size.y;
     }
 }
 

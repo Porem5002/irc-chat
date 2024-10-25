@@ -22,7 +22,11 @@ struct TextInput
 typedef struct ChatItem ChatItem;
 struct ChatItem
 {
-    char* text;
+    Color username_color;
+    char* username;
+
+    Color content_color;
+    char* content;
 };
 
 typedef struct ChatView ChatView;
@@ -32,8 +36,8 @@ struct ChatView
     ChatItem* items;
 };
 
-void chat_view_push(ChatView* chat, char* text);
-void chat_view_draw(const ChatView* chat, TextStyle style, Vector2 start_pos, Color content_color);
+void chat_view_push(ChatView* chat, Color username_color, const char* username, Color content_color, const char* content);
+void chat_view_draw(const ChatView* chat, TextStyle style, Vector2 start_pos);
 
 bool text_input_is_full(const TextInput* input);
 bool text_input_is_empty(const TextInput* input);
