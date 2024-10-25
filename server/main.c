@@ -1,42 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include "network/network.h"
-
-typedef struct ServerConfig ServerConfig;
-struct ServerConfig
-{
-    NetworkPort port;
-};
-
-ServerConfig server_load_config(int argc, char** argv)
-{
-    ServerConfig config = {
-        .port = 6000,
-    };
-
-    for(size_t i = 1; i < argc; i+=2)
-    {
-        if(strcmp(argv[i], "-port") == 0)
-        {
-            if(i + 1 >= argc)
-            {
-                fprintf(stderr, "ERROR: Invalid number of arguments for flag '-port'\n");
-                exit(EXIT_FAILURE);
-            }
-
-            config.port = (NetworkPort)atoi(argv[i+1]);
-        }
-        else
-        {
-            fprintf(stderr, "ERROR: \'%s\' is not a valid flag\n", argv[i]);
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    return config;
-}
+#include "../network/network.h"
+#include "config.h"
 
 int main(int argc, char** argv)
 {
@@ -71,7 +37,7 @@ int main(int argc, char** argv)
             switch(msg.kind)
             {
                 case NETWORK_MSG_KIND_CONNECT:
-                    // Prevent multiple connections from the same client
+                    //TODO: Prevent multiple connections from the same client
                     network_address_to_str(source, pbuffer, sizeof(pbuffer));
                     printf("%s connected\n", pbuffer);
 
@@ -79,7 +45,7 @@ int main(int argc, char** argv)
                     clients[client_count++] = source;
                     break;
                 case NETWORK_MSG_KIND_DISCONNECT:
-                    // Remove clients
+                    //TODO: Remove clients
                     network_address_to_str(source, pbuffer, sizeof(pbuffer));
                     printf("%s disconnected\n", pbuffer);
                     break;
