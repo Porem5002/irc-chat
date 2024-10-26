@@ -6,6 +6,7 @@
 typedef struct ClientConfig ClientConfig;
 struct ClientConfig
 {
+    const char* name;
     NetworkIP ip;
     NetworkPort port;
 };

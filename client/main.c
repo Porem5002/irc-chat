@@ -59,14 +59,26 @@ int main(int argc, char** argv)
 
         while(network_receive(&source_address, &msg))
         {
+            // Message Structure
+            // | NETWORK_MSG_KIND_TEXT | NAME (with '\0') | TEXT (with '\0') |
             if(msg.kind == NETWORK_MSG_KIND_TEXT)
-                chat_view_push(&chat, ORANGE, "someone", TEXT_COLOR, msg.content);
+            {
+                const char* name_ptr = msg.content;
+                const char* text_ptr = msg.content + strlen(name_ptr) + 1;
+                chat_view_push(&chat, ORANGE, name_ptr, TEXT_COLOR, text_ptr);
+            }
         }
 
         if(IsKeyPressed(KEY_ENTER) && !text_input_is_empty(&input))
         {
+            // Message Structure
+            // | NETWORK_MSG_KIND_TEXT | NAME (with '\0') | TEXT (with '\0') |
+            char* name_ptr = msg.content;
+            char* text_ptr = msg.content + strlen(config.name) + 1;
+
             msg.kind = NETWORK_MSG_KIND_TEXT;
-            strcpy(msg.content, input.text);
+            strcpy(name_ptr, config.name);
+            strcpy(text_ptr, input.text);
             network_send(target_address, &msg);
 
             chat_view_push(&chat, ORANGE, "you", TEXT_COLOR, input.text);

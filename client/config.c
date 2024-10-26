@@ -7,6 +7,7 @@
 ClientConfig client_load_config(int argc, char** argv)
 {
     ClientConfig config = {
+        .name = NULL,
         .ip = NETWORK_IP_LOCALHOST,
         .port = 6000,
     };
@@ -15,7 +16,19 @@ ClientConfig client_load_config(int argc, char** argv)
     {
         char* flag = argv[i];
 
-        if(strcmp(flag, "-ip") == 0)
+        if(strcmp(flag, "-name") == 0)
+        {
+            i++;
+
+            if(i >= argc)
+            {
+                fprintf(stderr, "ERROR: Invalid number of arguments for flag '%s'!\n", flag);
+                exit(EXIT_FAILURE);
+            }
+
+            config.name = argv[i];
+        }
+        else if(strcmp(flag, "-ip") == 0)
         {
             i++;
 
@@ -49,6 +62,12 @@ ClientConfig client_load_config(int argc, char** argv)
             exit(EXIT_FAILURE);
         }
     }
-    
+
+    if(config.name == NULL)
+    {
+        fprintf(stderr, "ERROR: No username was provided (use flag '-name')!\n");
+        exit(EXIT_FAILURE);
+    }
+
     return config;
 }
