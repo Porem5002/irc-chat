@@ -59,29 +59,34 @@ int main(int argc, char** argv)
 
         while(network_receive(&source_address, &msg))
         {
-            // Message Structure
-            // | NETWORK_MSG_KIND_TEXT | NAME (with '\0') | TEXT (with '\0') |
+            // Text Message Structure
+            // | NETWORK_MSG_KIND_TEXT | COLOR ID | NAME (with '\0') | TEXT (with '\0') |
             if(msg.kind == NETWORK_MSG_KIND_TEXT)
             {
-                const char* name_ptr = msg.content;
-                const char* text_ptr = msg.content + strlen(name_ptr) + 1;
-                chat_view_push(&chat, ORANGE, name_ptr, TEXT_COLOR, text_ptr);
+                const UserColorId* color_ptr = msg.content;
+                const char* name_ptr = color_ptr + sizeof(UserColorId);
+                const char* text_ptr = name_ptr + strlen(name_ptr) + 1;
+
+                Color color = user_color_id_to_color(*color_ptr);
+                chat_view_push(&chat, color, name_ptr, TEXT_COLOR, text_ptr);
             }
         }
 
         if(IsKeyPressed(KEY_ENTER) && !text_input_is_empty(&input))
         {
-            // Message Structure
-            // | NETWORK_MSG_KIND_TEXT | NAME (with '\0') | TEXT (with '\0') |
-            char* name_ptr = msg.content;
-            char* text_ptr = msg.content + strlen(config.name) + 1;
+            // Text Message Structure
+            // | NETWORK_MSG_KIND_TEXT | COLOR ID | NAME (with '\0') | TEXT (with '\0') |
+            UserColorId* color_ptr = msg.content;
+            char* name_ptr = color_ptr + sizeof(UserColorId);
+            char* text_ptr = name_ptr + strlen(config.name) + 1;
 
             msg.kind = NETWORK_MSG_KIND_TEXT;
+            *color_ptr = config.color;
             strcpy(name_ptr, config.name);
             strcpy(text_ptr, input.text);
             network_send(target_address, &msg);
 
-            chat_view_push(&chat, ORANGE, "you", TEXT_COLOR, input.text);
+            chat_view_push(&chat, user_color_id_to_color(config.color), "you", TEXT_COLOR, input.text);
             text_input_clear(&input);
         }
         

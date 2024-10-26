@@ -1,5 +1,5 @@
-#ifndef UI_HEADER
-#define UI_HEADER
+#ifndef CLIENT_UI_HEADER
+#define CLIENT_UI_HEADER
 
 #include <raylib.h>
 
